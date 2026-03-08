@@ -1,892 +1,284 @@
--- Universal Script By Bone.py
--- Complete Roblox exploit script with all requested features
+print("BoneHub Loaded")
 
+-- SERVICES
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local HttpService = game:GetService("HttpService")
+local UIS = game:GetService("UserInputService")
+local MarketplaceService = game:GetService("MarketplaceService")
 
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local CoreGui = game:GetService("CoreGui")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
 
--- Create main screen GUI
+-- GAMEPASS BYPASS
+pcall(function()
+    hookfunction(MarketplaceService.UserOwnsGamePassAsync,function()
+        return true
+    end)
+end)
+
+-- VARIABLES
+local jumpHeight = 50
+local infiniteJump = false
+local autoJump = false
+local espEnabled = false
+local vipRemoved = false
+local minimized = false
+local MinFrame
+
+-- INFINITE JUMP
+UIS.JumpRequest:Connect(function()
+    if infiniteJump then
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+-- AUTO JUMP
+RunService.RenderStepped:Connect(function()
+    if autoJump and humanoid.FloorMaterial ~= Enum.Material.Air then
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+-- APPLY JUMP HEIGHT
+RunService.RenderStepped:Connect(function()
+    humanoid.JumpPower = jumpHeight
+end)
+
+-- ESP SYSTEM
+local function addESP(plr)
+
+    if plr == player then return end
+
+    local function apply(char)
+
+        if char:FindFirstChild("BoneHubESP") then return end
+
+        local h = Instance.new("Highlight")
+        h.Name = "BoneHubESP"
+        h.FillColor = Color3.fromRGB(255,0,0)
+        h.OutlineColor = Color3.fromRGB(255,255,255)
+        h.FillTransparency = 0.5
+        h.Parent = char
+
+    end
+
+    if plr.Character then
+        apply(plr.Character)
+    end
+
+    plr.CharacterAdded:Connect(apply)
+
+end
+
+local function removeESP()
+
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Highlight") and v.Name == "BoneHubESP" then
+            v:Destroy()
+        end
+    end
+
+end
+
+-- VIP WALL REMOVER
+local function removeVIP()
+
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
+
+            local name = string.lower(v.Name)
+
+            if string.find(name,"vip") then
+                v.CanCollide = false
+                v.Transparency = 1
+            end
+
+        end
+    end
+
+end
+
+-- GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "UniversalScript"
-ScreenGui.Parent = CoreGui
+ScreenGui.Parent = game.CoreGui
+ScreenGui.Name = "ETFB BoneHub"
 
--- Main GUI container
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 400, 0, 500)
-MainFrame.Position = UDim2.new(0.5, -200, 0.5, -250)
-MainFrame.BackgroundColor3 = Color3.fromHex("#708090")
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Visible = true
-MainFrame.Parent = ScreenGui
+local Frame = Instance.new("Frame")
+Frame.Parent = ScreenGui
+Frame.Size = UDim2.new(0,330,0,330)
+Frame.Position = UDim2.new(0.5,-165,0.5,-165)
+Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Frame.Active = true
+Frame.Draggable = true
 
--- Top bar with title and controls
-local TopBar = Instance.new("Frame")
-TopBar.Size = UDim2.new(1, 0, 0, 30)
-TopBar.BackgroundColor3 = Color3.fromHex("#808080")
-TopBar.BorderSizePixel = 0
-TopBar.Parent = MainFrame
+-- TITLE
+local Title = Instance.new("TextLabel")
+Title.Parent = Frame
+Title.Size = UDim2.new(1,0,0,30)
+Title.BackgroundTransparency = 1
+Title.Text = "BoneHub"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 20
 
--- Title label
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(0, 200, 1, 0)
-TitleLabel.Position = UDim2.new(0, 0, 0, 0)
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "Universal Script By Bone.py"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleLabel.Font = Enum.Font.SourceSansBold
-TitleLabel.TextSize = 16
-TitleLabel.Parent = TopBar
+-- BUTTON MAKER
+local function makeButton(text,y)
 
--- Discord logo button
-local DiscordButton = Instance.new("TextButton")
-DiscordButton.Size = UDim2.new(0, 30, 0, 30)
-DiscordButton.Position = UDim2.new(0.5, -15, 0, 0)
-DiscordButton.BackgroundTransparency = 1
-DiscordButton.Text = "🌐"
-DiscordButton.TextScaled = true
-DiscordButton.Font = Enum.Font.Gotham
-DiscordButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-DiscordButton.Parent = TopBar
+    local b = Instance.new("TextButton")
+    b.Parent = Frame
+    b.Size = UDim2.new(0,300,0,35)
+    b.Position = UDim2.new(0,15,0,y)
+    b.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Text = text
 
--- Minimize button
-local MinimizeButton = Instance.new("TextButton")
-MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
-MinimizeButton.Position = UDim2.new(1, -60, 0, 0)
-MinimizeButton.BackgroundTransparency = 1
-MinimizeButton.Text = "-"
-MinimizeButton.TextScaled = true
-MinimizeButton.Font = Enum.Font.Gotham
-MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinimizeButton.Parent = TopBar
+    return b
+end
 
--- Close button
-local CloseButton = Instance.new("TextButton")
-CloseButton.Size = UDim2.new(0, 30, 0, 30)
-CloseButton.Position = UDim2.new(1, -30, 0, 0)
-CloseButton.BackgroundTransparency = 1
-CloseButton.Text = "X"
-CloseButton.TextScaled = true
-CloseButton.Font = Enum.Font.Gotham
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.Parent = TopBar
+-- INFINITE JUMP BUTTON
+local IJ = makeButton("Infinite Jump: OFF",40)
 
--- Content frame
-local ContentFrame = Instance.new("ScrollingFrame")
-ContentFrame.Size = UDim2.new(1, 0, 1, -30)
-ContentFrame.Position = UDim2.new(0, 0, 0, 30)
-ContentFrame.BackgroundColor3 = Color3.fromHex("#708090")
-ContentFrame.BorderSizePixel = 0
-ContentFrame.ScrollBarThickness = 5
-ContentFrame.Parent = MainFrame
+IJ.MouseButton1Click:Connect(function()
 
--- Feature toggles and controls
-local ToggleHeight = 30
-local ItemSpacing = 10
-local CurrentY = 10
+    infiniteJump = not infiniteJump
+    IJ.Text = "Infinite Jump: "..(infiniteJump and "ON" or "OFF")
 
--- Aimbot toggle
-local AimbotToggle = Instance.new("TextButton")
-AimbotToggle.Size = UDim2.new(1, -20, 0, ToggleHeight)
-AimbotToggle.Position = UDim2.new(0, 10, 0, CurrentY)
-AimbotToggle.BackgroundColor3 = Color3.fromHex("#808080")
-AimbotToggle.BorderSizePixel = 0
-AimbotToggle.Text = "Aimbot: OFF"
-AimbotToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-AimbotToggle.Font = Enum.Font.SourceSansBold
-AimbotToggle.TextScaled = true
-AimbotToggle.Parent = ContentFrame
-CurrentY = CurrentY + ToggleHeight + ItemSpacing
+end)
 
--- Speed slider
-local SpeedSliderFrame = Instance.new("Frame")
-SpeedSliderFrame.Size = UDim2.new(1, -20, 0, 50)
-SpeedSliderFrame.Position = UDim2.new(0, 10, 0, CurrentY)
-SpeedSliderFrame.BackgroundColor3 = Color3.fromHex("#808080")
-SpeedSliderFrame.BorderSizePixel = 0
-SpeedSliderFrame.Parent = ContentFrame
+-- AUTO JUMP BUTTON
+local AJ = makeButton("Auto Jump: OFF",80)
 
-local SpeedLabel = Instance.new("TextLabel")
-SpeedLabel.Size = UDim2.new(1, 0, 0, 20)
-SpeedLabel.Position = UDim2.new(0, 0, 0, 0)
-SpeedLabel.BackgroundTransparency = 1
-SpeedLabel.Text = "Speed: 16"
-SpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-SpeedLabel.Font = Enum.Font.SourceSansBold
-SpeedLabel.TextScaled = true
-SpeedLabel.Parent = SpeedSliderFrame
+AJ.MouseButton1Click:Connect(function()
 
-local SpeedSlider = Instance.new("Frame")
-SpeedSlider.Size = UDim2.new(1, -20, 0, 10)
-SpeedSlider.Position = UDim2.new(0, 10, 0, 25)
-SpeedSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-SpeedSlider.BorderSizePixel = 0
-SpeedSlider.Parent = SpeedSliderFrame
+    autoJump = not autoJump
+    AJ.Text = "Auto Jump: "..(autoJump and "ON" or "OFF")
 
-local SpeedSliderFill = Instance.new("Frame")
-SpeedSliderFill.Size = UDim2.new(0.2, 0, 1, 0)
-SpeedSliderFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-SpeedSliderFill.BorderSizePixel = 0
-SpeedSliderFill.Parent = SpeedSlider
+end)
 
-local SpeedSliderButton = Instance.new("TextButton")
-SpeedSliderButton.Size = UDim2.new(0, 20, 1, 0)
-SpeedSliderButton.Position = UDim2.new(0.2, -10, 0, 0)
-SpeedSliderButton.BackgroundTransparency = 1
-SpeedSliderButton.Text = "●"
-SpeedSliderButton.TextScaled = true
-SpeedSliderButton.Font = Enum.Font.Gotham
-SpeedSliderButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-SpeedSliderButton.Parent = SpeedSliderFrame
+-- ESP BUTTON
+local ESP = makeButton("ESP: OFF",120)
 
-CurrentY = CurrentY + 50 + ItemSpacing
+ESP.MouseButton1Click:Connect(function()
 
--- Jump Power slider
-local JumpSliderFrame = Instance.new("Frame")
-JumpSliderFrame.Size = UDim2.new(1, -20, 0, 50)
-JumpSliderFrame.Position = UDim2.new(0, 10, 0, CurrentY)
-JumpSliderFrame.BackgroundColor3 = Color3.fromHex("#808080")
-JumpSliderFrame.BorderSizePixel = 0
-JumpSliderFrame.Parent = ContentFrame
+    espEnabled = not espEnabled
 
-local JumpLabel = Instance.new("TextLabel")
-JumpLabel.Size = UDim2.new(1, 0, 0, 20)
-JumpLabel.Position = UDim2.new(0, 0, 0, 0)
-JumpLabel.BackgroundTransparency = 1
-JumpLabel.Text = "Jump Power: 50"
-JumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-JumpLabel.Font = Enum.Font.SourceSansBold
-JumpLabel.TextScaled = true
-JumpLabel.Parent = JumpSliderFrame
+    if espEnabled then
+        ESP.Text = "ESP: ON"
 
-local JumpSlider = Instance.new("Frame")
-JumpSlider.Size = UDim2.new(1, -20, 0, 10)
-JumpSlider.Position = UDim2.new(0, 10, 0, 25)
-JumpSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-JumpSlider.BorderSizePixel = 0
-JumpSlider.Parent = JumpSliderFrame
+        for _,p in pairs(Players:GetPlayers()) do
+            addESP(p)
+        end
 
-local JumpSliderFill = Instance.new("Frame")
-JumpSliderFill.Size = UDim2.new(0.2, 0, 1, 0)
-JumpSliderFill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-JumpSliderFill.BorderSizePixel = 0
-JumpSliderFill.Parent = JumpSlider
+    else
 
-local JumpSliderButton = Instance.new("TextButton")
-JumpSliderButton.Size = UDim2.new(0, 20, 1, 0)
-JumpSliderButton.Position = UDim2.new(0.2, -10, 0, 0)
-JumpSliderButton.BackgroundTransparency = 1
-JumpSliderButton.Text = "●"
-JumpSliderButton.TextScaled = true
-JumpSliderButton.Font = Enum.Font.Gotham
-JumpSliderButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-JumpSliderButton.Parent = JumpSliderFrame
+        ESP.Text = "ESP: OFF"
+        removeESP()
 
-CurrentY = CurrentY + 50 + ItemSpacing
+    end
 
--- TP Tool toggle
-local TPToggle = Instance.new("TextButton")
-TPToggle.Size = UDim2.new(1, -20, 0, ToggleHeight)
-TPToggle.Position = UDim2.new(0, 10, 0, CurrentY)
-TPToggle.BackgroundColor3 = Color3.fromHex("#808080")
-TPToggle.BorderSizePixel = 0
-TPToggle.Text = "TP Tool: OFF"
-TPToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-TPToggle.Font = Enum.Font.SourceSansBold
-TPToggle.TextScaled = true
-TPToggle.Parent = ContentFrame
-CurrentY = CurrentY + ToggleHeight + ItemSpacing
+end)
 
--- TP Player button
-local TPPlayerButton = Instance.new("TextButton")
-TPPlayerButton.Size = UDim2.new(1, -20, 0, ToggleHeight)
-TPPlayerButton.Position = UDim2.new(0, 10, 0, CurrentY)
-TPPlayerButton.BackgroundColor3 = Color3.fromHex("#808080")
-TPPlayerButton.BorderSizePixel = 0
-TPPlayerButton.Text = "TP Player"
-TPPlayerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-TPPlayerButton.Font = Enum.Font.SourceSansBold
-TPPlayerButton.TextScaled = true
-TPPlayerButton.Parent = ContentFrame
-CurrentY = CurrentY + ToggleHeight + ItemSpacing
+-- DUPE BUTTON
+local Dupe = makeButton("Dupe Tool",160)
 
--- Spin toggle
-local SpinToggle = Instance.new("TextButton")
-SpinToggle.Size = UDim2.new(1, -20, 0, ToggleHeight)
-SpinToggle.Position = UDim2.new(0, 10, 0, CurrentY)
-SpinToggle.BackgroundColor3 = Color3.fromHex("#808080")
-SpinToggle.BorderSizePixel = 0
-SpinToggle.Text = "Spin: OFF"
-SpinToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-SpinToggle.Font = Enum.Font.SourceSansBold
-SpinToggle.TextScaled = true
-SpinToggle.Parent = ContentFrame
-CurrentY = CurrentY + ToggleHeight + ItemSpacing
+Dupe.MouseButton1Click:Connect(function()
 
--- Fly toggle
-local FlyToggle = Instance.new("TextButton")
-FlyToggle.Size = UDim2.new(1, -20, 0, ToggleHeight)
-FlyToggle.Position = UDim2.new(0, 10, 0, CurrentY)
-FlyToggle.BackgroundColor3 = Color3.fromHex("#808080")
-FlyToggle.BorderSizePixel = 0
-FlyToggle.Text = "Fly: OFF"
-FlyToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-FlyToggle.Font = Enum.Font.SourceSansBold
-FlyToggle.TextScaled = true
-FlyToggle.Parent = ContentFrame
-CurrentY = CurrentY + ToggleHeight + ItemSpacing
+    local char = player.Character
+    if not char then return end
 
--- NoClip toggle
-local NoClipToggle = Instance.new("TextButton")
-NoClipToggle.Size = UDim2.new(1, -20, 0, ToggleHeight)
-NoClipToggle.Position = UDim2.new(0, 10, 0, CurrentY)
-NoClipToggle.BackgroundColor3 = Color3.fromHex("#808080")
-NoClipToggle.BorderSizePixel = 0
-NoClipToggle.Text = "NoClip: OFF"
-NoClipToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-NoClipToggle.Font = Enum.Font.SourceSansBold
-NoClipToggle.TextScaled = true
-NoClipToggle.Parent = ContentFrame
-CurrentY = CurrentY + ToggleHeight + ItemSpacing
+    local tool = char:FindFirstChildOfClass("Tool")
 
--- ESP toggle
-local ESPToggle = Instance.new("TextButton")
-ESPToggle.Size = UDim2.new(1, -20, 0, ToggleHeight)
-ESPToggle.Position = UDim2.new(0, 10, 0, CurrentY)
-ESPToggle.BackgroundColor3 = Color3.fromHex("#808080")
-ESPToggle.BorderSizePixel = 0
-ESPToggle.Text = "ESP: OFF"
-ESPToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-ESPToggle.Font = Enum.Font.SourceSansBold
-ESPToggle.TextScaled = true
-ESPToggle.Parent = ContentFrame
-CurrentY = CurrentY + ToggleHeight + ItemSpacing
+    if tool then
+        tool:Clone().Parent = player.Backpack
+    end
 
--- ESP Color Picker
-local ESPColorPicker = Instance.new("TextButton")
-ESPColorPicker.Size = UDim2.new(1, -20, 0, ToggleHeight)
-ESPColorPicker.Position = UDim2.new(0, 10, 0, CurrentY)
-ESPColorPicker.BackgroundColor3 = Color3.fromHex("#808080")
-ESPColorPicker.BorderSizePixel = 0
-ESPColorPicker.Text = "ESP Color: White"
-ESPColorPicker.TextColor3 = Color3.fromRGB(255, 255, 255)
-ESPColorPicker.Font = Enum.Font.SourceSansBold
-ESPColorPicker.TextScaled = true
-ESPColorPicker.Parent = ContentFrame
-CurrentY = CurrentY + ToggleHeight + ItemSpacing
+end)
 
--- Theme Color Picker
-local ThemeColorPicker = Instance.new("TextButton")
-ThemeColorPicker.Size = UDim2.new(1, -20, 0, ToggleHeight)
-ThemeColorPicker.Position = UDim2.new(0, 10, 0, CurrentY)
-ThemeColorPicker.BackgroundColor3 = Color3.fromHex("#808080")
-ThemeColorPicker.BorderSizePixel = 0
-ThemeColorPicker.Text = "Theme Color: Gray"
-ThemeColorPicker.TextColor3 = Color3.fromRGB(255, 255, 255)
-ThemeColorPicker.Font = Enum.Font.SourceSansBold
-ThemeColorPicker.TextScaled = true
-ThemeColorPicker.Parent = ContentFrame
-CurrentY = CurrentY + ToggleHeight + ItemSpacing
+-- VIP BUTTON
+local VIP = makeButton("VIP WALLS: OFF",200)
 
--- Resize content frame
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, CurrentY)
+VIP.MouseButton1Click:Connect(function()
 
--- Minimized circle GUI
-local MinimizedCircle = Instance.new("TextButton")
-MinimizedCircle.Size = UDim2.new(0, 50, 0, 50)
-MinimizedCircle.Position = UDim2.new(0.9, 0, 0.1, 0)
-MinimizedCircle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-MinimizedCircle.BorderSizePixel = 0
-MinimizedCircle.Text = "B"
-MinimizedCircle.TextScaled = true
-MinimizedCircle.Font = Enum.Font.Gotham
-MinimizedCircle.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinimizedCircle.Visible = false
-MinimizedCircle.Active = true
-MinimizedCircle.Draggable = true
-MinimizedCircle.Parent = ScreenGui
+    vipRemoved = not vipRemoved
 
--- Notification label
-local NotificationLabel = Instance.new("TextLabel")
-NotificationLabel.Size = UDim2.new(0, 200, 0, 50)
-NotificationLabel.Position = UDim2.new(0.5, -100, 0.1, 0)
-NotificationLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-NotificationLabel.BackgroundTransparency = 0.5
-NotificationLabel.Text = ""
-NotificationLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-NotificationLabel.Font = Enum.Font.SourceSansBold
-NotificationLabel.TextScaled = true
-NotificationLabel.Visible = false
-NotificationLabel.Parent = ScreenGui
+    if vipRemoved then
 
--- Variables for features
-local AimbotEnabled = false
-local SpeedValue = 16
-local JumpPowerValue = 50
-local TPToggleEnabled = false
-local SpinEnabled = false
-local FlyEnabled = false
-local NoClipEnabled = false
-local ESSEnabled = false
-local ESPColor = Color3.fromRGB(255, 255, 255)
-local TargetPlayer = nil
-local bodyVelocity = nil
-local flycontrol = {F = 0, R = 0, B = 0, L = 0, U = 0, D = 0}
-local flying = false
+        VIP.Text = "VIP WALLS: ON"
+        removeVIP()
 
--- Functions for features
-local function UpdateNotification(text)
-    NotificationLabel.Text = text
-    NotificationLabel.Visible = true
+    else
 
-    spawn(function()
-        wait(5)
-        NotificationLabel.Visible = false
+        VIP.Text = "VIP WALLS: OFF"
+
+    end
+
+end)
+
+-- JUMP HEIGHT BOX
+local JumpBox = Instance.new("TextBox")
+JumpBox.Parent = Frame
+JumpBox.Size = UDim2.new(0,300,0,30)
+JumpBox.Position = UDim2.new(0,15,0,240)
+JumpBox.BackgroundColor3 = Color3.fromRGB(50,50,50)
+JumpBox.TextColor3 = Color3.new(1,1,1)
+JumpBox.Text = "Jump Height: 50"
+
+JumpBox.FocusLost:Connect(function()
+
+    local val = tonumber(JumpBox.Text)
+
+    if val and val >= 50 and val <= 500 then
+        jumpHeight = val
+    end
+
+end)
+
+-- MINIMIZE BUTTON
+local Min = Instance.new("TextButton")
+Min.Parent = Frame
+Min.Size = UDim2.new(0,30,0,30)
+Min.Position = UDim2.new(1,-35,0,5)
+Min.Text = "-"
+
+-- CLOSE
+local Close = Instance.new("TextButton")
+Close.Parent = Frame
+Close.Size = UDim2.new(0,30,0,30)
+Close.Position = UDim2.new(1,-70,0,5)
+Close.Text = "X"
+
+-- MINIMIZE FUNCTION
+Min.MouseButton1Click:Connect(function()
+
+    if minimized then return end
+
+    Frame.Visible = false
+    minimized = true
+
+    MinFrame = Instance.new("TextButton")
+    MinFrame.Parent = ScreenGui
+    MinFrame.Size = UDim2.new(0,50,0,50)
+    MinFrame.Position = Frame.Position
+    MinFrame.Text = "BH"
+    MinFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    MinFrame.TextColor3 = Color3.new(1,1,1)
+    MinFrame.Active = true
+    MinFrame.Draggable = true
+
+    MinFrame.MouseButton1Click:Connect(function()
+
+        Frame.Position = MinFrame.Position
+        MinFrame:Destroy()
+
+        Frame.Visible = true
+        minimized = false
+
     end)
-end
 
--- Aimbot function
-local function AimAtNearestPlayer()
-    if not AimbotEnabled then return end
-
-    local nearestPlayer = nil
-    local shortestDistance = math.huge
-
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-            local head = player.Character.Head
-            local distance = (LocalPlayer.Character.Head.Position - head.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearestPlayer = player
-            end
-        end
-    end
-
-    if nearestPlayer and nearestPlayer.Character and nearestPlayer.Character:FindFirstChild("Head") then
-        local targetPosition = nearestPlayer.Character.Head.Position
-        local camera = workspace.CurrentCamera
-        local newLook = CFrame.lookAt(camera.CFrame.Position, targetPosition)
-        camera.CFrame = newLook
-    end
-end
-
--- Speed function
-local function SetSpeed(value)
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = value
-    end
-end
-
--- Jump Power function
-local function SetJumpPower(value)
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.JumpPower = value
-    end
-end
-
--- Fly function
-local function SetFly(state)
-    if not LocalPlayer.Character then return end
-    
-    local character = LocalPlayer.Character
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    local humanoid = character:FindFirstChildWhichIsA("Humanoid")
-    if not humanoid then return end
-    
-    if state then
-        flying = true
-        
-        local bv = Instance.new("BodyVelocity")
-        local bg = Instance.new("BodyGyro")
-        bv.MaxForce = Vector3.new(9e4, 9e4, 9e4)
-        bg.CFrame = hrp.CFrame
-        bg.MaxTorque = Vector3.new(9e4, 9e4, 9e4)
-        bg.P = 9e4
-        bv.Parent = hrp
-        bg.Parent = hrp
-        
-        for i, child in pairs(character:GetDescendants()) do
-            if child:IsA("BasePart") then
-                coroutine.wrap(function()
-                    local con = nil
-                    con = RunService.Stepped:Connect(function()
-                        if not flying then
-                            con:Disconnect()
-                            child.CanCollide = true
-                        end
-                        child.CanCollide = false
-                    end)
-                end)()
-            end
-        end
-        
-        local con = nil
-        con = RunService.Stepped:Connect(function()
-            if not flying then
-                con:Disconnect()
-                bv:Destroy()
-                bg:Destroy()
-            end
-            
-            humanoid.PlatformStand = true
-            bv.Velocity = (workspace.Camera.CoordinateFrame.LookVector * ((flycontrol.F - flycontrol.B) * 100)) + (workspace.CurrentCamera.CoordinateFrame.RightVector * ((flycontrol.R - flycontrol.L) * 100)) + (workspace.CurrentCamera.CoordinateFrame.UpVector * ((flycontrol.U - flycontrol.D) * 100))
-            bg.CFrame = workspace.Camera.CoordinateFrame
-        end)
-    else
-        flying = false
-        humanoid.PlatformStand = false
-    end
-end
-
--- NoClip function
-local function EnableNoClip()
-    if NoClipEnabled and LocalPlayer.Character then
-        local character = LocalPlayer.Character
-        for _, part in pairs(character:GetDescendants()) do
-            if part:IsA("BasePart") and part.CanCollide then
-                part.CanCollide = false
-            end
-        end
-    else
-        -- Re-enable collision when NoClip is disabled
-        if LocalPlayer.Character then
-            local character = LocalPlayer.Character
-            for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
-        end
-    end
-end
-
--- ESP function
-local ESPParts = {}
-local function CreateESP()
-    if not ESSEnabled then
-        -- Remove existing ESP parts
-        for _, part in pairs(ESPParts) do
-            part:Destroy()
-        end
-        ESPParts = {}
-        return
-    end
-
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local head = player.Character:FindFirstChild("Head")
-            if head then
-                local espNameTag = Instance.new("BillboardGui")
-                espNameTag.Name = "ESPNameTag"
-                espNameTag.Adornee = head
-                espNameTag.Size = UDim2.new(0, 200, 0, 50)
-                espNameTag.StudsOffset = Vector3.new(0, 3, 0)
-                espNameTag.AlwaysOnTop = true
-
-                local nameTagLabel = Instance.new("TextLabel")
-                nameTagLabel.Size = UDim2.new(1, 0, 1, 0)
-                nameTagLabel.BackgroundTransparency = 1
-                nameTagLabel.Text = player.Name
-                nameTagLabel.TextColor3 = ESPColor
-                nameTagLabel.Font = Enum.Font.SourceSansBold
-                nameTagLabel.TextScaled = true
-                nameTagLabel.Parent = espNameTag
-                espNameTag.Parent = head
-                table.insert(ESPParts, espNameTag)
-            end
-        end
-    end
-end
-
--- Event connections
-AimbotToggle.MouseButton1Click:Connect(function()
-    AimbotEnabled = not AimbotEnabled
-    AimbotToggle.Text = "Aimbot: " .. (AimbotEnabled and "ON" or "OFF")
 end)
 
-RunService.Heartbeat:Connect(function()
-    AimAtNearestPlayer()
-end)
-
-TPToggle.MouseButton1Click:Connect(function()
-    TPToggleEnabled = not TPToggleEnabled
-    TPToggle.Text = "TP Tool: " .. (TPToggleEnabled and "ON" or "OFF")
-end)
-
-UserInputService.InputBegan:Connect(function(input)
-    if TPToggleEnabled and input.UserInputType == Enum.UserInputType.MouseButton1 then
-        local mouse = LocalPlayer:GetMouse()
-        local targetPosition = mouse.Hit.Position
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
-        end
-    end
-end)
-
-SpinToggle.MouseButton1Click:Connect(function()
-    SpinEnabled = not SpinEnabled
-    SpinToggle.Text = "Spin: " .. (SpinEnabled and "ON" or "OFF")
-
-    if SpinEnabled then
-        spawn(function()
-            while SpinEnabled do
-                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(100), 0)
-                end
-                wait(0.01)
-            end
-        end)
-    end
-end)
-
-FlyToggle.MouseButton1Click:Connect(function()
-    FlyEnabled = not FlyEnabled
-    FlyToggle.Text = "Fly: " .. (FlyEnabled and "ON" or "OFF")
-    SetFly(FlyEnabled)
-end)
-
-NoClipToggle.MouseButton1Click:Connect(function()
-    NoClipEnabled = not NoClipEnabled
-    NoClipToggle.Text = "NoClip: " .. (NoClipEnabled and "ON" or "OFF")
-    EnableNoClip()
-end)
-
-ESPToggle.MouseButton1Click:Connect(function()
-    ESSEnabled = not ESSEnabled
-    ESPToggle.Text = "ESP: " .. (ESSEnabled and "ON" or "OFF")
-
-    if ESSEnabled then
-        CreateESP()
-        spawn(function()
-            while ESSEnabled do
-                CreateESP()
-                wait(1)
-            end
-        end)
-    else
-        CreateESP() -- This removes ESP when disabled
-    end
-end)
-
--- Speed slider interaction
-local draggingSpeed = false
-SpeedSliderButton.MouseButton1Down:Connect(function()
-    draggingSpeed = true
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement and draggingSpeed then
-        local mouse = LocalPlayer:GetMouse()
-        local sliderPos = SpeedSlider.AbsolutePosition.X
-        local sliderSize = SpeedSlider.AbsoluteSize.X
-
-        local relativeX = math.clamp((mouse.X - sliderPos) / sliderSize, 0, 1)
-        SpeedSliderButton.Position = UDim2.new(relativeX, -10, 0, 0)
-        SpeedSliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
-
-        SpeedValue = math.floor(16 + (relativeX * 100)) -- Range from 16 to 116
-        SpeedLabel.Text = "Speed: " .. SpeedValue
-        SetSpeed(SpeedValue)
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        draggingSpeed = false
-    end
-end)
-
--- Jump slider interaction
-local draggingJump = false
-JumpSliderButton.MouseButton1Down:Connect(function()
-    draggingJump = true
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement and draggingJump then
-        local mouse = LocalPlayer:GetMouse()
-        local sliderPos = JumpSlider.AbsolutePosition.X
-        local sliderSize = JumpSlider.AbsoluteSize.X
-
-        local relativeX = math.clamp((mouse.X - sliderPos) / sliderSize, 0, 1)
-        JumpSliderButton.Position = UDim2.new(relativeX, -10, 0, 0)
-        JumpSliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
-
-        JumpPowerValue = math.floor(50 + (relativeX * 200)) -- Range from 50 to 250
-        JumpLabel.Text = "Jump Power: " .. JumpPowerValue
-        SetJumpPower(JumpPowerValue)
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        draggingJump = false
-    end
-end)
-
--- TP Player button opens player selection
-TPPlayerButton.MouseButton1Click:Connect(function()
-    -- Create player selection menu
-    local playerMenu = Instance.new("Frame")
-    playerMenu.Size = UDim2.new(0, 200, 0, 300)
-    playerMenu.Position = UDim2.new(0.5, -100, 0.5, -150)
-    playerMenu.BackgroundColor3 = Color3.fromHex("#708090")
-    playerMenu.BorderSizePixel = 0
-    playerMenu.Parent = ScreenGui
-
-    local playerList = Instance.new("ScrollingFrame")
-    playerList.Size = UDim2.new(1, 0, 1, -40)
-    playerList.Position = UDim2.new(0, 0, 0, 0)
-    playerList.BackgroundColor3 = Color3.fromHex("#708090")
-    playerList.BorderSizePixel = 0
-    playerList.ScrollBarThickness = 5
-    playerList.Parent = playerMenu
-
-    local closeButton = Instance.new("TextButton")
-    closeButton.Size = UDim2.new(1, 0, 0, 30)
-    closeButton.Position = UDim2.new(0, 0, 1, -30)
-    closeButton.BackgroundColor3 = Color3.fromHex("#808080")
-    closeButton.Text = "Close"
-    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closeButton.Font = Enum.Font.SourceSansBold
-    closeButton.TextScaled = true
-    closeButton.Parent = playerMenu
-
-    local yPos = 10
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            local playerButton = Instance.new("TextButton")
-            playerButton.Size = UDim2.new(1, -20, 0, 30)
-            playerButton.Position = UDim2.new(0, 10, 0, yPos)
-            playerButton.BackgroundColor3 = Color3.fromHex("#808080")
-            playerButton.Text = player.Name
-            playerButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-            playerButton.Font = Enum.Font.SourceSansBold
-            playerButton.TextScaled = true
-            playerButton.Parent = playerList
-
-            playerButton.MouseButton1Click:Connect(function()
-                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    LocalPlayer.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame + Vector3.new(5, 0, 0)
-                end
-                playerMenu:Destroy()
-            end)
-
-            yPos = yPos + 40
-        end
-    end
-
-    playerList.CanvasSize = UDim2.new(0, 0, 0, yPos)
-
-    closeButton.MouseButton1Click:Connect(function()
-        playerMenu:Destroy()
-    end)
-end)
-
--- ESP Color Picker
-local ESPColors = {
-    ["White"] = Color3.fromRGB(255, 255, 255),
-    ["Red"] = Color3.fromRGB(255, 0, 0),
-    ["Green"] = Color3.fromRGB(0, 255, 0),
-    ["Blue"] = Color3.fromRGB(0, 0, 255),
-    ["Orange"] = Color3.fromRGB(255, 165, 0),
-    ["Black"] = Color3.fromRGB(0, 0, 0),
-    ["Purple"] = Color3.fromRGB(128, 0, 128),
-    ["Pink"] = Color3.fromRGB(255, 192, 203),
-    ["Yellow"] = Color3.fromRGB(255, 255, 0),
-    ["Cyan"] = Color3.fromRGB(0, 255, 255)
-}
-
-ESPColorPicker.MouseButton1Click:Connect(function()
-    -- Cycle through ESP colors
-    local currentColor = ESPColorPicker.Text:sub(11) -- Get current color name
-    local nextColor = "White" -- Default to white
-    
-    -- Find next color in the sequence
-    local found = false
-    for colorName, _ in pairs(ESPColors) do
-        if found then
-            nextColor = colorName
-            break
-        end
-        if colorName == currentColor then
-            found = true
-        end
-    end
-    if not found then
-        nextColor = "White"
-        local keys = {}
-        for k in pairs(ESPColors) do
-            table.insert(keys, k)
-        end
-        for i, v in ipairs(keys) do
-            if v == currentColor and i < #keys then
-                nextColor = keys[i+1]
-                break
-            elseif v == currentColor and i >= #keys then
-                nextColor = keys[1]
-                break
-            end
-        end
-    end
-    
-    ESPColorPicker.Text = "ESP Color: " .. nextColor
-    ESPColor = ESPColors[nextColor]
-    
-    if ESSEnabled then
-        CreateESP() -- Refresh ESP with new color
-    end
-end)
-
--- Theme Color Picker
-local ThemeColors = {
-    ["Gray"] = {bg = Color3.fromHex("#708090"), btn = Color3.fromHex("#808080")},
-    ["Red"] = {bg = Color3.fromRGB(200, 100, 100), btn = Color3.fromRGB(150, 50, 50)},
-    ["Green"] = {bg = Color3.fromRGB(100, 200, 100), btn = Color3.fromRGB(50, 150, 50)},
-    ["Blue"] = {bg = Color3.fromRGB(100, 100, 200), btn = Color3.fromRGB(50, 50, 150)},
-    ["Orange"] = {bg = Color3.fromRGB(255, 165, 0), btn = Color3.fromRGB(200, 120, 0)},
-    ["Black"] = {bg = Color3.fromRGB(50, 50, 50), btn = Color3.fromRGB(30, 30, 30)},
-    ["Purple"] = {bg = Color3.fromRGB(128, 0, 128), btn = Color3.fromRGB(100, 0, 100)},
-    ["Pink"] = {bg = Color3.fromRGB(255, 192, 203), btn = Color3.fromRGB(255, 105, 180)},
-    ["Yellow"] = {bg = Color3.fromRGB(255, 255, 0), btn = Color3.fromRGB(255, 215, 0)},
-    ["Cyan"] = {bg = Color3.fromRGB(0, 255, 255), btn = Color3.fromRGB(0, 200, 200)}
-}
-
-ThemeColorPicker.MouseButton1Click:Connect(function()
-    -- Cycle through theme colors
-    local currentTheme = ThemeColorPicker.Text:sub(14) -- Get current theme name
-    local nextTheme = "Gray" -- Default to gray
-    
-    -- Find next theme in the sequence
-    local keys = {}
-    for k in pairs(ThemeColors) do
-        table.insert(keys, k)
-    end
-    for i, v in ipairs(keys) do
-        if v == currentTheme and i < #keys then
-            nextTheme = keys[i+1]
-            break
-        elseif v == currentTheme and i >= #keys then
-            nextTheme = keys[1]
-            break
-        end
-    end
-    
-    local colors = ThemeColors[nextTheme]
-    MainFrame.BackgroundColor3 = colors.bg
-    TopBar.BackgroundColor3 = colors.btn
-    ContentFrame.BackgroundColor3 = colors.bg
-    
-    -- Update all buttons
-    for _, child in pairs(ContentFrame:GetChildren()) do
-        if child:IsA("TextButton") then
-            child.BackgroundColor3 = colors.btn
-        end
-    end
-    
-    ThemeColorPicker.Text = "Theme Color: " .. nextTheme
-end)
-
--- Discord button click event
-DiscordButton.MouseButton1Click:Connect(function()
-    setclipboard("https://discord.gg/SCAgfaBYst")
-    UpdateNotification("Link copied!")
-end)
-
--- Minimize button click event
-MinimizeButton.MouseButton1Click:Connect(function()
-    MainFrame.Visible = false
-    MinimizedCircle.Visible = true
-end)
-
--- Minimized circle click event
-MinimizedCircle.MouseButton1Click:Connect(function()
-    MainFrame.Visible = true
-    MinimizedCircle.Visible = false
-end)
-
--- Close button click event
-CloseButton.MouseButton1Click:Connect(function()
+-- CLOSE FUNCTION
+Close.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
-
--- J key Aimbot toggle
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.J then
-        AimbotEnabled = not AimbotEnabled
-        AimbotToggle.Text = "Aimbot: " .. (AimbotEnabled and "ON" or "OFF")
-    end
-end)
-
--- Fly key controls
-UserInputService.InputBegan:Connect(function(input)
-    if FlyEnabled and input.UserInputType == Enum.UserInputType.Keyboard then
-        if input.KeyCode == Enum.KeyCode.W then
-            flycontrol.F = 1
-        elseif input.KeyCode == Enum.KeyCode.S then
-            flycontrol.B = 1
-        elseif input.KeyCode == Enum.KeyCode.A then
-            flycontrol.L = 1
-        elseif input.KeyCode == Enum.KeyCode.D then
-            flycontrol.R = 1
-        elseif input.KeyCode == Enum.KeyCode.Space then
-            flycontrol.U = 1
-        elseif input.KeyCode == Enum.KeyCode.Q then
-            flycontrol.D = 1
-        end
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if FlyEnabled and input.UserInputType == Enum.UserInputType.Keyboard then
-        if input.KeyCode == Enum.KeyCode.W then
-            flycontrol.F = 0
-        elseif input.KeyCode == Enum.KeyCode.S then
-            flycontrol.B = 0
-        elseif input.KeyCode == Enum.KeyCode.A then
-            flycontrol.L = 0
-        elseif input.KeyCode == Enum.KeyCode.D then
-            flycontrol.R = 0
-        elseif input.KeyCode == Enum.KeyCode.Space then
-            flycontrol.U = 0
-        elseif input.KeyCode == Enum.KeyCode.Q then
-            flycontrol.D = 0
-        end
-    end
-end)
-
--- NoClip loop
-RunService.Stepped:Connect(function()
-    if NoClipEnabled then
-        local character = LocalPlayer.Character
-        if character then
-            for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BasePart") and part.CanCollide then
-                    part.CanCollide = false
-                end
-            end
-        end
-    else
-        local character = LocalPlayer.Character
-        if character then
-            for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
-            end
-        end
-    end
-end)
-
--- Initialize settings
-SetSpeed(SpeedValue)
-SetJumpPower(JumpPowerValue)
